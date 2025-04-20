@@ -1,99 +1,86 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 
 public class EnigmaFrame extends JFrame {
+
+   // input field for rotor starting positions
    private JTextField initPos;
+   // dropdowns for selecting rotor numbers
    private JComboBox inner;
    private JComboBox middle;
    private JComboBox out;
+   // buttons to encrypt or decrypt
    private JButton encrypt;
    private JButton decrypt;
+   // input area for the user’s message
    private JTextArea in;
+   // output area to show the result
    private JTextArea output;
-
    public EnigmaFrame() {
       super();
+      // options for rotors 1 through 5
       String[] rot = {"1","2","3","4","5"};
-      initPos = new JTextField("###",4);
+      // set up fields and buttons
+      initPos = new JTextField("###", 4);
       inner = new JComboBox(rot);
       middle = new JComboBox(rot);
-      out  = new JComboBox(rot);
+      out = new JComboBox(rot);
       encrypt = new JButton("Encrypt");
       decrypt = new JButton("Decrypt");
-      in = new JTextArea(5,20);
-      output = new JTextArea(5,20);
+      in = new JTextArea(5, 20);
+      output = new JTextArea(5, 20);
+      // top panel holds all the settings and buttons
       JPanel top = new JPanel(new FlowLayout());
-      top.add(new JLabel("Inner"));
+      top.add(new JLabel("inner"));
       top.add(inner);
-      top.add(new JLabel("Middle"));
+      top.add(new JLabel("middle"));
       top.add(middle);
-      top.add(new JLabel("Out"));
+      top.add(new JLabel("out"));
       top.add(out);
-      top.add(new JLabel("Initial Positions"));
+      top.add(new JLabel("initial positions"));
       top.add(initPos);
       top.add(encrypt);
       top.add(decrypt);
-      this.add(top,BorderLayout.NORTH);
+      this.add(top, BorderLayout.NORTH);
+      // center panel holds the message input area
       JPanel center = new JPanel(new FlowLayout());
-      center.add(new JLabel("Input"));
+      center.add(new JLabel("input"));
       center.add(in);
+      this.add(center, BorderLayout.CENTER);
+      // bottom panel holds the output area
       JPanel bottom = new JPanel(new FlowLayout());
-      bottom.add(new JLabel("Output"));
+      bottom.add(new JLabel("output"));
       bottom.add(output);
-      this.add(center,BorderLayout.CENTER);
-      this.add(bottom,BorderLayout.SOUTH);
-
+      this.add(bottom, BorderLayout.SOUTH);
+      // connect button clicks to the action listener
       EnigmaActionListener eal = new EnigmaActionListener();
-      //initPos.addActionListener(eal);
-      //inner.addActionListener(eal);
-      //middle.addActionListener(eal);
-      //out.addActionListener(eal);
       encrypt.addActionListener(eal);
       decrypt.addActionListener(eal);
-
+      // adjust the window to fit everything
       this.pack();
+      // close the app when the window is closed
       this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-
    }
-
+   // handles what happens when a button is clicked
    private class EnigmaActionListener implements ActionListener {
       public void actionPerformed(ActionEvent e) {
-         String[] params = new String[5];
+         // build the input like how it would be entered on the command line
+         String[] params = new String[6];
          params[0] = (String)inner.getSelectedItem();
          params[1] = (String)middle.getSelectedItem();
          params[2] = (String)out.getSelectedItem();
-         params[3] = initPos.getText();
-         String com = e.getActionCommand();
-         if(com.equals("Encrypt"))
-            params[4] = "encrypt";
-         else
-            params[4] = "decrypt";
-
-
-         // println to output string and input from the string
-         ByteArrayInputStream bais = new ByteArrayInputStream(in.getText().getBytes());
-         InputStream oldIn = System.in;
-         System.setIn(bais);
-         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-         PrintStream ps = new PrintStream(baos);
-         PrintStream old = System.out;
-         System.setOut(ps);
-         Comms.main(params);
-         // restore output and input
-         System.setIn(oldIn);
-         System.out.flush();
-         System.setOut(old);
-         output.setText(baos.toString());
+         params[3] = initPos.getText().toUpperCase();
+         params[4] = e.getActionCommand().equals("Encrypt") ? "encrypt" : "decrypt";
+         params[5] = in.getText().toUpperCase().replaceAll("[^A-Z#]", "#");
+         try {
+            // run the enigma logic and show the result
+            String result = Comms.run(params);
+            output.setText(result);
+         } catch (Exception ex) {
+            // if something goes wrong, show the error
+            output.setText("error: " + ex.getMessage());
+         }
       }
    }
-
-
 }
-
